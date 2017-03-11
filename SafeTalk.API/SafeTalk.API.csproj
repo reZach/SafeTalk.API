@@ -154,9 +154,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Views\ApiHub\" />
-    <Folder Include="Views\Chatroom\" />
-    <Folder Include="Views\User\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="APIControllers\CacheController.cs" />
