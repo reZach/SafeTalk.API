@@ -190,7 +190,6 @@
     <Compile Include="APIControllers\ChatroomController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="APIControllers\UserController.cs" />
-    <Compile Include="Filters\NullFilter.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>

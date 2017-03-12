@@ -1,5 +1,4 @@
-﻿using SafeTalk.API.Filters;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -12,9 +11,6 @@ namespace SafeTalk.API
         public static void Register(HttpConfiguration config)
         {
             // Web API configuration and services
-
-            // https://docs.microsoft.com/en-us/aspnet/web-api/overview/error-handling/exception-handling
-            config.Filters.Add(new NullResponseFilter());
 
             // Return JSON by default
             config.Formatters.JsonFormatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("text/html"));

@@ -51,27 +51,6 @@ namespace SafeTalk.API.Controllers
             return cache.Chatrooms;
         }
 
-        public Chatroom GetChatroom(int index, RedisCache cache = null)
-        {
-            if (cache == null)
-            {
-                cache = GetCache();
-            }
-            Chatroom chatroom = cache.Chatrooms[index];
-
-            return chatroom;
-        }
-
-        public int GetChatroomIndex(string name, RedisCache cache = null)
-        {
-            if (cache == null)
-            {
-                cache = GetCache();
-            }
-            int chatroomIndex = cache.Chatrooms.FindIndex(x => x.Name == name);
-
-            return chatroomIndex;
-        }
 
         public bool AddUserToChatroom(UserChatroom userChatroom)
         {
@@ -112,6 +91,136 @@ namespace SafeTalk.API.Controllers
 
             return success;
         }
+
+
+
+        #region Internal functions
+        public Chatroom GetChatroom(int index, RedisCache cache = null)
+        {
+            if (cache == null)
+            {
+                cache = GetCache();
+            }
+            Chatroom chatroom = cache.Chatrooms[index];
+
+            return chatroom;
+        }
+
+        public int GetChatroomIndex(string name, RedisCache cache = null)
+        {
+            if (cache == null)
+            {
+                cache = GetCache();
+            }
+            int chatroomIndex = cache.Chatrooms.FindIndex(x => x.Name == name);
+
+            return chatroomIndex;
+        }
+
+        public bool PostChatroom(Chatroom chatroom, RedisCache cache = null)
+        {
+            bool success = true;
+
+            if (cache == null)
+            {
+                cache = GetCache();
+            }
+
+            int chatroomIndex = GetChatroomIndex(chatroom.Name, cache);
+            if (chatroomIndex >= 0)
+            {
+                return false;
+            }
+
+            cache.Chatrooms.Add(chatroom);
+            SetCache(cache);
+
+            return success;
+        }
+
+        public bool PutChatroom(ref Chatroom chatroom, RedisCache cache = null)
+        {
+            bool success = true;
+
+            if (cache == null)
+            {
+                cache = GetCache();
+            }
+
+            int chatroomIndex = GetChatroomIndex(chatroom.Name, cache);
+            if (chatroomIndex < 0)
+            {
+                return false;
+            }
+
+            cache.Chatrooms[chatroomIndex] = chatroom;
+            SetCache(cache);
+
+            return success;
+        }
+        #endregion
+
+
+
+        #region API endpoints
+        // /api/chatroom/post
+        [HttpPost]
+        public IHttpActionResult Post(string name)
+        {
+            RedisCache cache = GetCache();
+            Chatroom newChatroom = new Chatroom();
+            newChatroom.Name = name;
+
+            bool success = PostChatroom(newChatroom, cache);
+            if (!success)
+            {
+                return NotFound();
+            }
+
+            return Ok(newChatroom);
+        }
+
+        // /api/chatroom/get
+        [HttpGet]
+        public IHttpActionResult Get()
+        {
+            RedisCache cache = GetCache();
+
+            return Ok(cache.Chatrooms);
+        }
+
+        // /api/chatroom/get
+        [HttpGet]
+        public IHttpActionResult Get(string name)
+        {
+            RedisCache cache = GetCache();
+
+            int chatroomIndex = GetChatroomIndex(name);
+            if (chatroomIndex < 0)
+            {
+                return NotFound();
+            }
+            Chatroom chatroom = GetChatroom(chatroomIndex, cache);
+
+            return Ok(chatroom);
+        }
+
+        // /api/chatroom/put
+        [HttpPut]
+        public IHttpActionResult Put(Chatroom chatroom)
+        {
+            RedisCache cache = GetCache();
+
+            bool success = PutChatroom(ref chatroom, cache);
+            if (success)
+            {
+                return Ok(chatroom);
+            }
+
+            return NotFound();
+        }
+        #endregion
+
 
 
 

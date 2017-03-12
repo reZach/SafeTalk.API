@@ -116,7 +116,7 @@ namespace SafeTalk.API.Controllers
             bool success = PostUser(newUser, cache);
             if (!success)
             {
-                return null;
+                return NotFound();
             }
 
             return Ok(newUser);
@@ -140,7 +140,7 @@ namespace SafeTalk.API.Controllers
             int userIndex = GetUserIndex(guid, cache);
             if (userIndex < 0)
             {
-                return null;
+                return NotFound();
             }
             User user = GetUser(userIndex, cache);
 
@@ -149,7 +149,7 @@ namespace SafeTalk.API.Controllers
 
         // /api/user/put
         [HttpPut]
-        public IHttpActionResult Put(User user, bool setNewRandomName)
+        public IHttpActionResult Put(User user, bool setNewRandomName = false)
         {
             RedisCache cache = GetCache();
 
@@ -159,7 +159,7 @@ namespace SafeTalk.API.Controllers
                 return Ok(user);
             }
 
-            return null;
+            return NotFound();
         }
 
         // /api/user/delete
@@ -174,7 +174,7 @@ namespace SafeTalk.API.Controllers
                 return Ok(user);
             }
 
-            return null;
+            return NotFound();
         }
         #endregion
     }
