@@ -1,20 +1,17 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SafeTalk.API.Controllers;
-using SafeTalk.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Http;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Web.Http.Results;
+using System.Web.Http;
+using SafeTalk.Models;
+using SafeTalk.API.Controllers;
+using System.Collections.Generic;
 
 namespace SafeTalk.Tests
 {
     [TestClass]
     [DeploymentItem("sharedAppSettings.config")]
     [DeploymentItem("secretConnectionStrings.config")]
-    class TestChatroomController
+    public class TestChatroomController
     {
         [TestMethod]
         public void Post_ShouldReturnNewChatroom()
@@ -29,6 +26,24 @@ namespace SafeTalk.Tests
             var contentResult = response as OkNegotiatedContentResult<Chatroom>;
 
             Assert.AreEqual(contentResult.Content.GetType(), fakeChatroom.GetType());
+        }
+
+        [TestMethod]
+        public void Sequence_ShouldPostThenRetrieveChatroom()
+        {
+            // to-do
+        }
+
+        [TestMethod]
+        public void Get_ShouldReturnListOfChatrooms()
+        {
+            var controller = new ChatroomController();
+
+            var compareTo = new List<Chatroom>();
+            IHttpActionResult response = controller.Get();
+            var contentResult = response as OkNegotiatedContentResult<List<Chatroom>>;
+
+            Assert.AreEqual(contentResult.Content.GetType(), compareTo.GetType());
         }
     }
 }

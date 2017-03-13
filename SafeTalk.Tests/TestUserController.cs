@@ -30,18 +30,6 @@ namespace SafeTalk.Tests
             Assert.AreEqual(contentResult.Content.GetType(), fakeUser.GetType());
         }
 
-        [TestMethod]        
-        public void Get_ShouldReturnListOfUsers()
-        {
-            var controller = new UserController();
-
-            var compareTo = new List<User>();
-            IHttpActionResult response = controller.Get();
-            var contentResult = response as OkNegotiatedContentResult<List<User>>;
-
-            Assert.AreEqual(contentResult.Content.GetType(), compareTo.GetType());
-        }
-        
         [TestMethod]
         public void Sequence_ShouldPostThenRetrieveUser()
         {
@@ -72,6 +60,18 @@ namespace SafeTalk.Tests
 
             Assert.AreEqual(previousCount + 1, newCount);
         }
+
+        [TestMethod]        
+        public void Get_ShouldReturnListOfUsers()
+        {
+            var controller = new UserController();
+
+            var compareTo = new List<User>();
+            IHttpActionResult response = controller.Get();
+            var contentResult = response as OkNegotiatedContentResult<List<User>>;
+
+            Assert.AreEqual(contentResult.Content.GetType(), compareTo.GetType());
+        }               
 
         [TestMethod]
         public void Put_FailsToUpdateBecauseUserDoesntExist()
