@@ -6,12 +6,12 @@ namespace SafeTalk.API.Interfaces
 {
     public interface ICacheChatroom
     {
-        bool AddChatroom(string name);
-        bool RemoveChatroom(string name);
-        List<Chatroom> GetChatrooms();
         Chatroom GetChatroom(int index, RedisCache cache = null);
         int GetChatroomIndex(string name, RedisCache cache = null);
-        bool AddUserToChatroom(UserChatroom userChatroom);
-        bool RemoveUserFromChatroom(UserChatroom userChatroom);
+        bool PostChatroom(Chatroom chatroom, RedisCache cache = null);
+        bool PostUserToChatroom(Chatroom chatroom, User user, RedisCache cache = null);
+        bool PutChatroom(ref Chatroom chatroom, RedisCache cache = null);
+        bool DeleteChatroom(Chatroom chatroom, RedisCache cache = null);
+        bool DeleteUserFromChatroom(Chatroom chatroom, User user, RedisCache cache = null);
     }
 }

@@ -11,89 +11,6 @@ namespace SafeTalk.API.Controllers
 {
     public class ChatroomController : ApiHubController<SafeTalkHub>, ICacheChatroom
     {
-        // Internal functions
-        public bool AddChatroom(string name)
-        {
-            bool retVal = false;
-            RedisCache Cache = GetCache();
-
-            if (!Cache.Chatrooms.Any(x => x.Name == name))
-            {
-                retVal = true;
-                Chatroom NewChatroom = new Chatroom
-                {
-                    Name = name
-                };
-
-                Cache.Chatrooms.Add(NewChatroom);
-
-                SetCache(Cache);
-            }
-
-            return retVal;
-        }
-
-        public bool RemoveChatroom(string name)
-        {
-            RedisCache Cache = GetCache();
-
-            int count = Cache.Chatrooms.RemoveAll(x => x.Name == name);
-
-            SetCache(Cache);
-
-            return count > 0;
-        }
-
-        public List<Chatroom> GetChatrooms()
-        {
-            RedisCache cache = GetCache();
-
-            return cache.Chatrooms;
-        }
-
-
-        public bool AddUserToChatroom(UserChatroom userChatroom)
-        {
-            bool success = false;
-            RedisCache cache = GetCache();
-
-            int chatroomFromCache = cache.Chatrooms.FindIndex(x => x.Name == userChatroom.Chatroom.Name);
-
-            if (chatroomFromCache >= 0)
-            {
-                // If the user isn't in the chatroom
-                if (!cache.Chatrooms[chatroomFromCache].UserGuids.Any(x => x == userChatroom.User.Guid))
-                {
-                    // Add the user's guid to the chatroom
-                    cache.Chatrooms[chatroomFromCache].UserGuids.Add(userChatroom.User.Guid);
-                    SetCache(cache);
-                    success = true;
-                }
-            }
-
-            return success;
-        }
-
-        public bool RemoveUserFromChatroom(UserChatroom userChatroom)
-        {
-            bool success = false;
-            RedisCache Cache = GetCache();
-
-            int chatroomFromCache = Cache.Chatrooms.FindIndex(x => x.Name == userChatroom.Chatroom.Name);
-
-            if (chatroomFromCache >= 0)
-            {
-                // Remove the user from the chatroom
-                Cache.Chatrooms[chatroomFromCache].UserGuids.RemoveAll(x => x == userChatroom.User.Guid);
-                SetCache(Cache);
-                success = true;
-            }
-
-            return success;
-        }
-
-
-
         #region Internal functions
         public Chatroom GetChatroom(int index, RedisCache cache = null)
         {
@@ -138,6 +55,39 @@ namespace SafeTalk.API.Controllers
             return success;
         }
 
+        public bool PostUserToChatroom(Chatroom chatroom, User user, RedisCache cache = null)
+        {
+            bool success = true;
+
+            if (cache == null)
+            {
+                cache = GetCache();
+            }
+
+            int chatroomIndex = GetChatroomIndex(chatroom.Name, cache);
+            if (chatroomIndex >= 0)
+            {
+                return false;
+            }
+
+            int userIndex = cache.Users.FindIndex(x => x.Guid == user.Guid);
+            if (userIndex < 0)
+            {
+                return false;
+            }
+
+            // User already is in chatroom
+            if (cache.Chatrooms[chatroomIndex].UserGuids.FindIndex(x => x == user.Guid) >= 0)
+            {
+                return false;
+            }
+            cache.Chatrooms[chatroomIndex].UserGuids.Add(user.Guid);
+
+            SetCache(cache);
+
+            return success;
+        }
+
         public bool PutChatroom(ref Chatroom chatroom, RedisCache cache = null)
         {
             bool success = true;
@@ -154,6 +104,54 @@ namespace SafeTalk.API.Controllers
             }
 
             cache.Chatrooms[chatroomIndex] = chatroom;
+            SetCache(cache);
+
+            return success;
+        }
+
+        public bool DeleteChatroom(Chatroom chatroom, RedisCache cache = null)
+        {
+            bool success = true;
+
+            if (cache == null)
+            {
+                cache = GetCache();
+            }
+
+            int chatroomIndex = GetChatroomIndex(chatroom.Name, cache);
+            if (chatroomIndex < 0)
+            {
+                return false;
+            }
+
+            cache.Chatrooms.RemoveAt(chatroomIndex);
+            SetCache(cache);
+
+            return success;
+        }
+
+        public bool DeleteUserFromChatroom(Chatroom chatroom, User user, RedisCache cache = null)
+        {
+            bool success = true;
+
+            if (cache == null)
+            {
+                cache = GetCache();
+            }
+
+            int chatroomIndex = GetChatroomIndex(chatroom.Name, cache);
+            if (chatroomIndex < 0)
+            {
+                return false;
+            }
+
+            // User is not in the chatroom
+            if (cache.Chatrooms[chatroomIndex].UserGuids.FindIndex(x => x == user.Guid) < 0)
+            {
+                return false;
+            }
+            cache.Chatrooms[chatroomIndex].UserGuids.Remove(user.Guid);
+
             SetCache(cache);
 
             return success;
@@ -178,6 +176,29 @@ namespace SafeTalk.API.Controllers
             }
 
             return Ok(newChatroom);
+        }
+
+        // /api/chatroom/postuser
+        [HttpPost]
+        public async Task<IHttpActionResult> PostUser(string name, User user)
+        {
+            RedisCache cache = GetCache();
+
+            int chatroomIndex = GetChatroomIndex(name);
+            if (chatroomIndex < 0)
+            {
+                return NotFound();
+            }
+            Chatroom chatroom = GetChatroom(chatroomIndex, cache);
+
+            bool success = PostUserToChatroom(chatroom, user, cache);
+            if (!success)
+            {
+                return NotFound();
+            }
+
+            await Hub.Groups.Add(ConnectionId, chatroom.Name);
+            return Ok(chatroom);
         }
 
         // /api/chatroom/get
@@ -219,89 +240,43 @@ namespace SafeTalk.API.Controllers
 
             return NotFound();
         }
-        #endregion
 
-
-
-
-        // API endpoints
-        [HttpPost]
-        public IHttpActionResult Add(string name)
-        {
-            bool result = AddChatroom(name);
-
-            if (result)
-            {
-                return Ok("good");
-            }
-            return null;
-        }
-
-        [HttpPost]
-        public IHttpActionResult Remove(string name)
-        {
-            bool result = RemoveChatroom(name);
-
-            if (result)
-            {
-                return Ok("good");
-            }
-            return null;
-        }
-
-        [HttpGet]
-        public IHttpActionResult Get(string name)
+        // /api/chatroom/delete
+        [HttpDelete]
+        public IHttpActionResult Delete(Chatroom chatroom)
         {
             RedisCache cache = GetCache();
 
-            int index = GetChatroomIndex(name, cache);
-            if (index < 0)
+            bool success = DeleteChatroom(chatroom, cache);
+            if (success)
             {
-                return null;
+                return Ok(chatroom);
             }
 
-            Chatroom chatroom = GetChatroom(index, cache);
-            return Ok(chatroom);
+            return NotFound();
         }
 
-        [HttpPost]
-        public IHttpActionResult Check(UserChatroom userChatroom)
+        // /api/chatroom/deleteuser
+        [HttpDelete]
+        public async Task<IHttpActionResult> DeleteUser(UserChatroom userChatroom)
         {
+            RedisCache cache = GetCache();
+
+            int userIndex = GetChatroomIndex(userChatroom.User.Guid);
+            if (userIndex < 0)
+            {
+                return NotFound();
+            }
+
+            bool success = PostUserToChatroom(userChatroom.Chatroom, userChatroom.User, cache);
+            if (!success)
+            {
+                return NotFound();
+            }
+
+            await Hub.Groups.Remove(ConnectionId, userChatroom.Chatroom.Name);
             return Ok(userChatroom);
         }
-
-        [HttpPost]
-        public async Task<IHttpActionResult> Join(UserChatroom userChatroom)
-        {
-            bool success = AddUserToChatroom(userChatroom);
-
-            if (success)
-            {
-                await Hub.Groups.Add(ConnectionId, userChatroom.Chatroom.Name);
-                return Ok("good");
-            }
-
-            return null;
-        }
-
-        [HttpPost]
-        public async Task<IHttpActionResult> Leave(UserChatroom userChatroom)
-        {
-            bool success = RemoveUserFromChatroom(userChatroom);
-
-            if (success)
-            {
-                await Hub.Groups.Remove(ConnectionId, userChatroom.Chatroom.Name);
-                return Ok("good");
-            }
-
-            return null;
-        }
-
-        [HttpGet]
-        public IHttpActionResult List()
-        {
-            return Ok(GetChatrooms());
-        }
+        #endregion
     }
 }
