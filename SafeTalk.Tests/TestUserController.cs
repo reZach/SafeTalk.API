@@ -135,5 +135,23 @@ namespace SafeTalk.Tests
 
             Assert.IsInstanceOfType(response2, typeof(OkNegotiatedContentResult<User>));
         }
+
+        [TestMethod]
+        public void Delete_ShouldRemoveUserFromCache()
+        {
+            var controller = new UserController();
+
+            IHttpActionResult response = controller.Get();
+            var contentResult = response as OkNegotiatedContentResult<List<User>>;
+            var previousCount = contentResult.Content.Count;
+
+            var user = contentResult.Content[0];
+            IHttpActionResult response2 = controller.Delete(user);
+            IHttpActionResult response3 = controller.Get();
+            var contentResult2 = response3 as OkNegotiatedContentResult<List<User>>;
+            var newCount = contentResult2.Content.Count;
+
+            Assert.AreEqual(previousCount - 1, newCount);
+        }
     }
 }

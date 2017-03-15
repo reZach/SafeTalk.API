@@ -65,7 +65,7 @@ namespace SafeTalk.API.Controllers
             }
 
             int chatroomIndex = GetChatroomIndex(chatroom.Name, cache);
-            if (chatroomIndex >= 0)
+            if (chatroomIndex < 0)
             {
                 return false;
             }
