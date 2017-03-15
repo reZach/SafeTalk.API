@@ -18,13 +18,19 @@ namespace SafeTalk.Tests
     [DeploymentItem("secretConnectionStrings.config")]
     public class TestUserController
     {
+        UserController userController { get; set; }
+
+        [TestInitialize]
+        public void Init()
+        {
+            userController = new UserController();
+        }
+
         [TestMethod]        
         public void Post_ShouldReturnNewUser()
         {
-            var controller = new UserController();
-
             var fakeUser = new User();
-            IHttpActionResult response = controller.Post();
+            IHttpActionResult response = userController.Post();
             var contentResult = response as OkNegotiatedContentResult<User>;
 
             Assert.AreEqual(contentResult.Content.GetType(), fakeUser.GetType());
@@ -33,12 +39,10 @@ namespace SafeTalk.Tests
         [TestMethod]
         public void Sequence_ShouldPostThenRetrieveUser()
         {
-            var controller = new UserController();
-
-            IHttpActionResult response = controller.Post();
+            IHttpActionResult response = userController.Post();
             var contentResult = response as OkNegotiatedContentResult<User>;
             var user = contentResult.Content;
-            IHttpActionResult response2 = controller.Get(user.Guid);
+            IHttpActionResult response2 = userController.Get(user.Guid);
             var contentResult2 = response2 as OkNegotiatedContentResult<User>;
 
             Assert.AreEqual(contentResult2.Content.Guid, user.Guid);
@@ -47,14 +51,12 @@ namespace SafeTalk.Tests
         [TestMethod]
         public void Post_ShouldAddUserToCache()
         {
-            var controller = new UserController();
-
-            IHttpActionResult response = controller.Get();
+            IHttpActionResult response = userController.Get();
             var contentResult = response as OkNegotiatedContentResult<List<User>>;
             var previousCount = contentResult.Content.Count;
 
-            IHttpActionResult response2 = controller.Post();
-            IHttpActionResult response3 = controller.Get();
+            IHttpActionResult response2 = userController.Post();
+            IHttpActionResult response3 = userController.Get();
             var contentResult3 = response3 as OkNegotiatedContentResult<List<User>>;
             var newCount = contentResult3.Content.Count;
 
@@ -64,10 +66,8 @@ namespace SafeTalk.Tests
         [TestMethod]        
         public void Get_ShouldReturnListOfUsers()
         {
-            var controller = new UserController();
-
             var compareTo = new List<User>();
-            IHttpActionResult response = controller.Get();
+            IHttpActionResult response = userController.Get();
             var contentResult = response as OkNegotiatedContentResult<List<User>>;
 
             Assert.AreEqual(contentResult.Content.GetType(), compareTo.GetType());
@@ -76,10 +76,8 @@ namespace SafeTalk.Tests
         [TestMethod]
         public void Put_FailsToUpdateBecauseUserDoesntExist()
         {
-            var controller = new UserController();
-
             var notInCacheUser = new User();
-            IHttpActionResult response = controller.Put(notInCacheUser);
+            IHttpActionResult response = userController.Put(notInCacheUser);
 
             Assert.IsInstanceOfType(response, typeof(NotFoundResult));
         }
@@ -87,12 +85,10 @@ namespace SafeTalk.Tests
         [TestMethod]
         public void Put_SucceedsForExistingUser()
         {
-            var controller = new UserController();
-
-            IHttpActionResult response = controller.Get();
+            IHttpActionResult response = userController.Get();
             var contentResult = response as OkNegotiatedContentResult<List<User>>;
             User user = contentResult.Content[0];
-            IHttpActionResult response2 = controller.Put(user);
+            IHttpActionResult response2 = userController.Put(user);
 
             Assert.IsInstanceOfType(response2, typeof(OkNegotiatedContentResult<User>));
         }
@@ -100,13 +96,11 @@ namespace SafeTalk.Tests
         [TestMethod]
         public void Put_SetsNewRandomNameForUser()
         {
-            var controller = new UserController();
-
-            IHttpActionResult response = controller.Get();
+            IHttpActionResult response = userController.Get();
             var contentResult = response as OkNegotiatedContentResult<List<User>>;
             User user = contentResult.Content[0];
             string oldName = user.Name;
-            IHttpActionResult response2 = controller.Put(user, true);
+            IHttpActionResult response2 = userController.Put(user, true);
             var contentResult2 = response2 as OkNegotiatedContentResult<User>;
 
             Assert.AreNotEqual(oldName, contentResult2.Content.Name);
@@ -115,10 +109,8 @@ namespace SafeTalk.Tests
         [TestMethod]
         public void Delete_FailsForNonExistingUser()
         {
-            var controller = new UserController();
-
             User user = new User();
-            IHttpActionResult response = controller.Delete(user);
+            IHttpActionResult response = userController.Delete(user);
 
             Assert.IsInstanceOfType(response, typeof(NotFoundResult));
         }
@@ -126,12 +118,10 @@ namespace SafeTalk.Tests
         [TestMethod]
         public void Delete_SucceedsForExistingUser()
         {
-            var controller = new UserController();
-
-            IHttpActionResult response = controller.Post();
+            IHttpActionResult response = userController.Post();
             var contentResult = response as OkNegotiatedContentResult<User>;
             var user = contentResult.Content;
-            IHttpActionResult response2 = controller.Delete(user);
+            IHttpActionResult response2 = userController.Delete(user);
 
             Assert.IsInstanceOfType(response2, typeof(OkNegotiatedContentResult<User>));
         }
@@ -139,15 +129,13 @@ namespace SafeTalk.Tests
         [TestMethod]
         public void Delete_ShouldRemoveUserFromCache()
         {
-            var controller = new UserController();
-
-            IHttpActionResult response = controller.Get();
+            IHttpActionResult response = userController.Get();
             var contentResult = response as OkNegotiatedContentResult<List<User>>;
             var previousCount = contentResult.Content.Count;
 
             var user = contentResult.Content[0];
-            IHttpActionResult response2 = controller.Delete(user);
-            IHttpActionResult response3 = controller.Get();
+            IHttpActionResult response2 = userController.Delete(user);
+            IHttpActionResult response3 = userController.Get();
             var contentResult2 = response3 as OkNegotiatedContentResult<List<User>>;
             var newCount = contentResult2.Content.Count;
 
